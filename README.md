@@ -1,4 +1,5 @@
 🕵️ Agente de Análise de Dados com IA (Gemini + LangChain)
+
 Este projeto é uma aplicação web interativa que utiliza um agente de Inteligência Artificial para realizar Análise Exploratória de Dados (EDA) em qualquer arquivo CSV fornecido pelo usuário. A ferramenta foi construída com Streamlit para a interface, Pandas para a manipulação dos dados, e um agente poderoso baseado em LangChain e no modelo Gemini do Google.
 
 ✨ Principais Funcionalidades
