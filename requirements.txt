@@ -6,3 +6,5 @@ langchain-core
 langchain
 langchain-experimental
 scikit-learn
+seaborn
+tabulate
