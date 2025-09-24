@@ -49,6 +49,7 @@ Lógica de Funcionamento:
 
 # Passo 1: Instalação e Importação das Bibliotecas
 # -------------------------------------------------
+import io
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -279,6 +280,17 @@ if uploaded_file is not None:
         if not hasattr(st.session_state, 'df_loaded') or not st.session_state.df_loaded:
              st.success("Arquivo CSV carregado com sucesso! Veja as cinco primeiras linhas:")
              st.dataframe(df.head()) #visualização das 5 primeiras linhas
+             st.write("Informações básicas sobre os dados:")
+             
+             # 1. Cria um buffer de texto na memória
+             buffer = io.StringIO()
+             # 2. Redireciona a saída do df.info() para o buffer
+             df.info(buf=buffer)
+             # 3. Pega o conteúdo do buffer como uma string
+             info_str = buffer.getvalue()
+             # 4. Exibe a string como texto pré-formatado
+             st.text(info_str)
+             
              st.write("Estatísticas descritivas dos dados:") #estatísticas descritivas
              st.dataframe(df.describe(include='all').T) #transposta para melhor visualização
              st.session_state.df_loaded = True # Marca que o dataframe foi carregado
