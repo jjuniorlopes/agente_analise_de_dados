@@ -8,3 +8,4 @@ langchain-experimental
 scikit-learn
 seaborn
 tabulate
+io
