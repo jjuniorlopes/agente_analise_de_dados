@@ -1,16 +1,57 @@
-# -*- coding: utf-8 -*-
+# -*- Código Python para construção do agente de Inteligência Artificial genérico  -*-
 """
-Objetivo do Agente de IA:
-Este script implementa um agente de Análise Exploratória de Dados (EDA) utilizando Streamlit,
-Pandas, LangChain e o modelo Gemini do Google. O agente é projetado para ser genérico,
-permitindo que os usuários façam upload de qualquer arquivo CSV, façam perguntas, recebam
-respostas textuais e visualizem gráficos gerados pela análise.
+================================================================================
+AGENTE DE ANÁLISE DE DADOS (EDA) COM GEMINI E LANGCHAIN
+================================================================================
+
+Objetivo Principal:
+Este script implementa um agente de Inteligência Artificial genérico, projetado
+para realizar Análise Exploratória de Dados (EDA) em qualquer conjunto de dados
+fornecido em um arquivo CSV. O objetivo é criar uma ferramenta de EDA poderosa
+e acessível, onde um usuário, mesmo sem conhecimento técnico em programação,
+possa interagir em linguagem natural para obter insights, visualizações e
+conclusões sobre seus dados.
+
+Principais Funcionalidades:
+- Carregamento de qualquer arquivo CSV através de uma interface web.
+- Interface de chat interativa para realizar perguntas em linguagem natural.
+- Geração de respostas textuais, tabelas e análises estatísticas.
+- Criação de visualizações gráficas (histogramas, boxplots, mapas de calor, etc.).
+- Aplicação de modelos básicos de machine learning para classificação.
+- Apresentação de conclusões consolidadas a partir das análises realizadas.
+
+Tecnologias Utilizadas:
+- Interface Web: Streamlit
+- Estrutura do Agente: LangChain e LangChain Experimental
+- Modelo de Linguagem (LLM): Google Gemini (via langchain-google-genai)
+- Manipulação de Dados: Pandas
+- Visualização de Dados: Matplotlib
+- Machine Learning: Scikit-learn
+
+Lógica de Funcionamento:
+1. O usuário acessa a interface criada com o Streamlit.
+2. Na barra lateral, o usuário insere sua chave de API do Google Gemini e tem a
+   opção de reiniciar a conversa.
+3. O usuário faz o upload de um arquivo CSV de sua escolha.
+4. O script carrega os dados do CSV em um DataFrame do Pandas.
+5. Um agente do LangChain é inicializado, conectando o modelo Gemini a um
+   conjunto de ferramentas capaz de executar código Python (especificamente
+   comandos do Pandas e Matplotlib).
+6. O usuário faz uma pergunta no chat (ex: "Qual a correlação entre as colunas?").
+7. O agente recebe a pergunta, analisa o DataFrame e gera internamente o
+   código Python necessário para encontrar a resposta.
+8. O código é executado em um ambiente seguro, e o resultado (seja um texto,
+   uma tabela ou um gráfico) é capturado.
+9. O resultado final é formatado e exibido de forma clara na interface de
+   chat para o usuário. A memória da conversa é mantida para permitir
+   perguntas de acompanhamento.
 """
 
 # Passo 1: Instalação e Importação das Bibliotecas
 # -------------------------------------------------
 import streamlit as st
 import pandas as pd
+import io as io
 import matplotlib.pyplot as plt
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage
@@ -21,20 +62,17 @@ from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 
-# Layout Moderno com Cores ESG ---
-# Substitua a sua função antiga por esta
+# Layout Moderno com Cores ESG e Azul corporativo
+# Substitua a sua função antiga por esta versão atualizada
 def aplicar_estilo_moderno():
     """Aplica um CSS customizado para um layout moderno com cores ESG."""
     estilo_css = """
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap');
 
-        html, body, [class*="st-"] {
-            font-family: 'Source Sans Pro', sans-serif;
-        }
-
-        /* Cor de fundo principal */
+        /* Corpo da página */
         .stApp {
+            font-family: 'Source Sans Pro', sans-serif;
             background-color: #F0F2F6;
         }
 
@@ -49,9 +87,14 @@ def aplicar_estilo_moderno():
             color: #1A3A5A; /* Azul Corporativo Escuro */
         }
         
-        /* Título "Configurações" na Sidebar */
+        /* --- MUDANÇA AQUI: Título "Configurações" na Sidebar --- */
         [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-             color: #00A896; /* Verde ESG */
+             background-color: #00A896; /* Fundo Verde ESG */
+             color: white;              /* Texto branco */
+             padding: 10px;             /* Espaçamento interno para criar a "caixa" */
+             border-radius: 10px;       /* Bordas arredondadas */
+             text-align: center;        /* Centralizar o texto */
+             margin-bottom: 20px;       /* Espaço abaixo do título */
         }
 
         /* Botões */
@@ -74,28 +117,29 @@ def aplicar_estilo_moderno():
             margin-bottom: 1em;
         }
         
-        /* Chat do Assistente (IA) */
         [data-testid="stChatMessage"]:has(span[data-testid="chat-avatar-assistant"]) {
             background-color: #FFFFFF;
             border: 1px solid #E6EAF1;
         }
 
-        /* Chat do Usuário */
         [data-testid="stChatMessage"]:has(span[data-testid="chat-avatar-user"]) {
-            background-color: #D6F1EE; /* Fundo verde claro */
+            background-color: #D6F1EE;
         }
 
-        /* --- NOVAS REGRAS ADICIONADAS AQUI --- */
-
-        /* Estilo para o texto (label) acima da caixa de input da API Key */
-        [data-testid="stSidebar"] .st-emotion-cache-1y4p8pa p {
-            color: #1A3A5A;
-            font-weight: 600;
+        /* --- MUDANÇA AQUI: Texto (label) da caixa de input da API Key --- */
+        [data-testid="stSidebar"] label {
+            background-color: #00A896;    /* Fundo Verde ESG */
+            color: white !important;      /* Texto branco (!important para garantir) */
+            padding: 8px;                 /* Espaçamento interno */
+            border-radius: 10px;          /* Bordas arredondadas */
+            display: block;               /* Garante que o fundo ocupe toda a largura */
+            width: 100%;
+            text-align: center;           /* Centralizar o texto */
+            margin-bottom: 10px;          /* Espaço antes da caixa de input */
         }
         
-        /* Estilo para a caixa de input da API Key na sidebar */
         [data-testid="stSidebar"] input[type="password"] {
-            background-color: #D6F1EE; /* O mesmo verde claro do chat do usuário */
+            background-color: #D6F1EE;
             border: 1px solid #00A896;
             border-radius: 5px;
         }
@@ -123,7 +167,7 @@ def get_llm(google_api_key):
     """
     Inicializa e retorna o modelo de linguagem (LLM) do Google Gemini.
     """
-    # Modelo corrigido para uma versão válida e o parâmetro obsoleto removido
+    # Modelo LLM Gemini 2.5 Flash
     return ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=google_api_key,
@@ -235,8 +279,19 @@ if uploaded_file is not None:
     if df is not None:
         if not hasattr(st.session_state, 'df_loaded') or not st.session_state.df_loaded:
              st.success("Arquivo CSV carregado com sucesso! Veja as cinco primeiras linhas:")
-             st.dataframe(df.head())
-             st.session_state.df_loaded = True
+             st.dataframe(df.head()) #visualização das 5 primeiras linhas
+             st.write("Informações básicas sobre os dados:")
+             # 1. Cria um buffer de texto na memória
+             buffer = io.StringIO()
+             # 2. Redireciona a saída do df.info() para o buffer
+             df.info(buf=buffer)
+             # 3. Pega o conteúdo do buffer como uma string
+             info_str = buffer.getvalue()
+             # 4. Exibe a string como texto pré-formatado
+             st.text(info_str)
+             st.write("Estatísticas descritivas dos dados:") #estatísticas descritivas
+             st.dataframe(df.describe(include='all').T) #transposta para melhor visualização
+             st.session_state.df_loaded = True # Marca que o dataframe foi carregado
 
         try:
             llm = get_llm(google_api_key)
@@ -258,7 +313,7 @@ if uploaded_file is not None:
         - Baseie-se nos dados carregados do CSV.
         - Para dados numéricos decimais retorne penas duas casas decimais.
         - Não ivente nada, se basear nos dados carregados.
-        - Se ouver resposta textual em ingles, traduza para o português.
+        - Se ouver resposta textual em ingles, responda em português.
         - Seja conciso e direto ao ponto.
         - Sempre que possóvel, forneça respostas em formato de tabela para melhor visualização.
         - Use gráficos para ilustrar tendência, distribuições e correlações nos dados.
@@ -268,7 +323,7 @@ if uploaded_file is not None:
         - Caso não saiba a informação, responda: "Não sei informar o que você pediu. Estou pronto para sua próxima pergunta ou instrução."
         - Após gerar um gráfico, forneça também uma breve explicação textual sobre o que o gráfico que você gerou.
         - Ao responder, não mostre o código Python gerado, a menos que seja explicitamente solicitado. Apenas mostre o resultado (texto, tabelas ou gráficos).
-        - Se o agente responder o texto em inglês, traduza para português.
+        - Seja um analista de dados crítico e detalhista.        
         """
         
         prompt_template = ChatPromptTemplate.from_messages([
