@@ -204,26 +204,38 @@ def limpar_chat():
 # --- Interface do Streamlit ---
 
 with st.sidebar:
-    st.header("Configurações")
-    google_api_key = st.text_input("Insira sua Chave de API do Google Gemini e precione ENTER", type="password")
+    st.header("⚙️ Configurações")
+    
+ # Tenta carregar a chave de API dos segredos do Streamlit
+    # Se não encontrar, mostra o campo para inserção manual (ideal para rodar localmente)
+    try:
+        google_api_key = st.secrets["GOOGLE_API_KEY"]
+        st.success("✅ Chave de API carregada com segurança!")
+    except (KeyError, FileNotFoundError):
+        st.warning("🔑 Chave de API não encontrada nos segredos.")
+        google_api_key = st.text_input(
+            "Insira sua Chave de API do Google Gemini e pressione ENTER", 
+            type="password",
+            help="Você pode configurar a chave de forma permanente no arquivo .streamlit/secrets.toml"
+        )
     
     # Botão para limpar o chat/reiniciar
     st.button("Limpar Chat e Reiniciar", on_click=limpar_chat, use_container_width=True)
 
     st.info(
     """
-    **💡 Bem-vindo ao Agente de Análise de Dados! Siga os passos abaixo para começar:**
+    **💡 Bem-vindo ao Agente de Análise de Dados!**
     
-    📝 O arquivo `csv` pode ser baixado em: 
+    📢 Para testar o agente, segue o link de um arquivo `csv` de fraudes em cartão de crédito pode ser baixado em: 
     
        ➡️ [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
-       ️ ou carregado dentro do seu computador.
+       ou carregado dentro do seu computador.
 
-    📝 Para sua segurança segurança, a chave necessária para ativar a inteligência do agente não ficará armazenada.
+    🔑 Para sua segurança, a chave necessária para ativar a inteligência do agente não ficará armazenada.
 
     1.  Carregue seu Arquivo CSV: 
         
-        ✅ Clique no botão "Browse files" aolado e selecione o arquivo CSV que você deseja analisar.
+        ✅ Clique no botão "Browse files" e selecione o arquivo CSV que você deseja analisar.
         
         ✅ O agente irá carregar os dados e exibir as primeiras linhas para confirmação.
 
